@@ -1,3 +1,22 @@
+/*
+Name: Vanessa Kang
+Course: Harvard Week 4
+Challenge Name: speller
+Purpose: Implement a program that spell-checks a file, using a given dictionary.
+
+This implementation was done by creating a trie data structure of given dictionary words. Then spellchecking a text file.
+Functions that were implemented were
+
+    LOAD: Load dictionary into your choosing of data structure on the heap memory
+    CHECK: Check a word from the file if it exists in the dictionary on memory
+    UNLOAD: Remove dictionary trie off memory
+    SIZE: Output the number of words in the dictionary
+
+*/
+
+
+
+
 // Implements a dictionary's functionality
 
 #include <stdbool.h>
@@ -17,15 +36,12 @@ bool check(const char * word)
     int level = 0;
     int index;
 
-    //printf("---NEW WORD---\n");
-
     for (int j = 0; j < strlen(word) + 1; j++){
 
         //Check for bool = true to see if its a word
         if (word[j] =='\0' && level > 0){
-            //printf ("Checking if True\n");
+
             if (checkpointer->is_word == true){
-                //printf("WOOT ITS THERE\n");
                 return true;
             }
             break;
@@ -34,7 +50,6 @@ bool check(const char * word)
         //Gets index of an Aphostraphe
         if (word[j] == '\''){
             index = 26;
-            //printf ("Aphospraphe with Index: %d --%c  :\n", index, word[j]);
         }
 
         //Gets Index of alphabet letter whether its upper or lowercase
@@ -45,18 +60,15 @@ bool check(const char * word)
             else{
                 index = word[j] - 'a';
             }
-            //printf ("Letter with Index: %d --%c  :\n", index, word[j]);
         }
 
         //Checks if pointer to that index is NUll
         if (checkpointer->children[index] == NULL){
-            //printf("Found a NULL pointer for character %c\n", word[j]);
             break;
         }
         else {
             checkpointer = checkpointer->children[index];
             level += 1;
-            //printf("Moving onto Level %i \n", level);
         }
 
     }
@@ -66,8 +78,12 @@ bool check(const char * word)
 // Loads dictionary into memory, returning true if successful else false
 bool load(const char * dictionary)
 {
+    //Indicate that the file has not been loaded yet
     loadstate = false;
+
+    //Counts number of words in dictionary
     wordC = 0;
+
     //Malloc address for rootpointer for the size of node
     node *rootnode = NULL;
     rootnode = (node *)malloc(sizeof(node));
@@ -81,7 +97,6 @@ bool load(const char * dictionary)
 
     //Initlize is_word as false
     rootnode->is_word = false;
-    //printf("What is Is_word: %i\n",rootpointer->is_word);
 
     //Initialize root children[] array as NULL
     for (int child = 0; child < CHILDLENGTH; child ++)
@@ -111,10 +126,11 @@ bool load(const char * dictionary)
     node *adderpointer = rootpointer;
 
     //Read a word from file
-    //if End of File, all words has been read from dictionary
     while (fscanf(dictionaryfile, "%s", dictWord) != EOF)
     {
+        //Word count
         wordC ++;
+
         //Create a for loop to go through all character variable
         for (int i = 0; i < sizeof(dictWord); i++)
         {
@@ -122,7 +138,7 @@ bool load(const char * dictionary)
             //If its the end of the word, make sure to place is_word is true
             if (dictWord[i] == '\0' && level > 0)
             {
-                //printf("---------------This is the end (Making is_word = true)---------------\n");
+
                 adderpointer->is_word = true;
                 break;
             }
@@ -133,62 +149,71 @@ bool load(const char * dictionary)
                 if (dictWord[i] == '\'')
                 {
                     index = 26;
-                    //printf ("Aphospraphe with Index: %d --%c  :\n", index, dictWord[i]);
                 }
 
                 //Gets Index of alphabet letter
                 else
                 {
                     index = dictWord[i] - 'a';
-                    //printf("Letter with Index: %d --%c   :\n", index, dictWord[i]);
                 }
 
 
                 if (adderpointer->children[index] == NULL)
                 {
-                    //printf("NULL : so creating another level \n");
 
                     //Creating another node
                     node *addernode = NULL;
                     addernode = (node *)malloc(sizeof(node));
 
+                    //Check if allocated memory is NULL
                     if (addernode == NULL)
                     {
                         fprintf(stderr, "Could not create adderpointer at level %i", level);
                         return 0;
                     }
 
+                    //Create a node that has false and NULL values
                     addernode->is_word = false;
                     for (int child = 0; child < CHILDLENGTH; child ++)
                     {
                         addernode->children[child] = NULL;
                     }
 
+                    //Add new NULL node to current child
                     adderpointer->children[index] = addernode;
 
                 }
+                //TRaverse to another node level
                 adderpointer = adderpointer->children[index];
                 level += 1;
             }
         }
-        //printf("-------The Level is %i-----------\n", level);
+        //Reset level and make pointer = root ot add another word
         level = 0;
         adderpointer = rootpointer;
+
+        //Mkae dictWORD reset to NUL character
         memset(dictWord, '\0', sizeof(dictWord));
     }
 
+    //Close dictionary file after all words have ran
     fclose(dictionaryfile);
+
+    //Indicate that the dictionary has loaded onto memory
     loadstate = true;
+
     return true;
 }
 
 // Returns number of words in dictionary if loaded else 0 if not yet loaded
 unsigned int size(void)
 {
+    //If not loaded, return size of zero
     if (!loadstate){
         return 0;
     }
 
+    //create new pointer to check for words in the trie
     node *sizepointer = rootpointer;
 
     return sizecheck(sizepointer);
@@ -207,7 +232,9 @@ bool unload(void)
     //After finishing freeing children, free the root pointer
     free(unloadptr);
 
+    //Indicate that the dictionary has been unloaded from memory
     loadstate = false;
+
     return true;
 }
 
@@ -215,7 +242,7 @@ bool unload(void)
 //Unloads children from memory
 void unloading (node *unloader)
 {
-    //Iterate through each 27 child
+    //Iterate through each 27 children
     for (int i = 0; i < CHILDLENGTH; i++)
     {
         //If a Node exists, call the function again to free its children
@@ -224,17 +251,17 @@ void unloading (node *unloader)
             unloading(unloader->children[i]);
         }
 
-        //Else Free that pointer
+        //Else free that current pointer
         free(unloader->children[i]);
     }
 }
 
 int sizecheck (node *sizeptr)
 {
-    //initlize the size to be zero everytime
+    //initlize the sizecount to be zero
     int sizecount = 0;
 
-    //Checks if at this particular pointer has a true
+    //Checks if at this particular pointer is the end of a word
     if (sizeptr->is_word == true)
     {
         sizecount +=1;

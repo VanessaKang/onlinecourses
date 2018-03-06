@@ -1,3 +1,10 @@
+/*
+Name: Vanessa Kang
+Course: Harvard Week 4
+Challenge Name: speller
+Purpose: This is the header file used to implement a program that spell-checks a file, using a given dictionary.
+*/
+
 // Declares a dictionary's functionality
 
 #ifndef DICTIONARY_H
