@@ -1,0 +1,28 @@
+Inputs: SourceID, TargetID
+
+Frontier = {}
+Explored = {}
+Initialize our Node: None
+
+Add intial Node into Frontier()
+
+ApplyBFS():
+While Frontier Length !=0: 
+{
+	- Remove 1 NODE from the Froniter (FIFO) from the Beginning
+	- Add Node to Explored()
+	- SETNN = NN(Node.state(PersonID)
+	- Iterate Set in SETNN: 
+		-Check if SET(PersonID) = TargetID
+			-Return Solution(NODE)
+		-Else:
+			-Add the SET TO The Frontier()
+}
+Return NONE
+
+SolutionList (Node):
+- Get the Parent of that Node
+- Grab SET of that Parent..... until the Parent = NONE
+- Reverse the ListofSet and insert into List
+   Return ListofSolutions
+
