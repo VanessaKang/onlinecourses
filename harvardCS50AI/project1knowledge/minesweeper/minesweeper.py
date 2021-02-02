@@ -197,14 +197,12 @@ class MinesweeperAI():
         # 1) mark the cell as a move that has been made
         self.moves_made.add(cell)
 
-        # 2) mark the cell as safe which will remove this cell from all sentences in knowlege
+        # 2) mark the cell as safe which will remove this cell from all sentences in knowledge
         self.mark_safe(cell)
 
-        # 3) construct new sentence based on neighboring cells minus known moves/mines/safes (states undetermined)
+        # 3) construct new sentence based on neighboring cells minus known mines/safes (states undetermined)
         neighbor_set = set()
-        # 1,0
-        # 0,3 range(0,3) [0, 1, 2]
-        # -1, 2 range(-1,2) [-1, 0, 1]
+
         for i in range(cell[0] - 1, cell[0] + 2):
             for j in range(cell[1] - 1, cell[1] + 2):
 
@@ -215,35 +213,62 @@ class MinesweeperAI():
                 # Update count if cell in bounds
                 if 0 <= i < self.height and 0 <= j < self.width:
                     neighbor_set.add((i, j))
-        neighbor_set = neighbor_set - self.moves_made - self.safes - self.mines
 
+        # Only get neighbors that is unrevealed
+        neighbor_set = neighbor_set - self.moves_made
+        # Make sure to not include any known mines and remove count if found (only mine affects counts)
+        mine_count = 0
+        for cell in neighbor_set:
+            if cell in self.mines:
+                mine_count = mine_count + 1
         # Add new sentence to knowledge base
-        self.knowledge.append(Sentence(neighbor_set, count))
+        self.knowledge.append(Sentence(neighbor_set - self.mines - self.safes, count - mine_count))
 
-        # 3) All we did so far is remove safe cell from sentence , iterate through all sentences
-        # iterate through all sentences to figure out any mines (A,B} = 2
-        # Make all mines (decrease counts in certain sentences) + add to mine list
-        # 4) iterate again to check for Safe (count == 0) and mark as safe
+        while True:
+            initial_knowledge = copy.deepcopy(self.knowledge)
+            # Keep making inferences on current move on original self.knowledge
+            self.recursive_inference()
 
-        originalknowledge = copy.deepcopy(self.knowledge)
-        for sentence in originalknowledge:
+            # No changes to self.knowledge means that recursive_inference could not make any more inferences
+            if initial_knowledge == self.knowledge:
+                break
 
+
+    def recursive_inference(self):
+        # 4
+        # Mark any additional cells as safe or as mines
+
+        # Go through each sentence in knowledge and remove known minescells (update mine_count) and remove known safecells
+        knowledge_copy = copy.deepcopy(self.knowledge)  # will break if self.knowledge is modified during iteration
+        for sentence in knowledge_copy:
             if len(sentence.known_mines()) > 0:
-                for minecells in sentence.known_mines():
-                    self.mark_mine(minecells)
+                for mine_cells in sentence.known_mines():
+                    self.mark_mine(mine_cells)
             if len(sentence.known_safes()) > 0:
-                for safecells in sentence.known_safes():
-                    self.mark_safe(safecells)
+                for safe_cells in sentence.known_safes():
+                    self.mark_safe(safe_cells)
 
-        # 5) add any new sentences to the AI's knowledge base, if they can be inferred from existing knowledge
-        # Iterate through each sentence in a knowlegde, check other sentences if its a subset
+        # 5)
+        # add any new sentences to the AI's knowledge base, if they can be inferred from existing knowledge
 
-        knowledge1 = copy.deepcopy(self.knowledge)
-        for sentence in knowledge1:
-            for iteratedsentence in knowledge1:
-                if sentence.cells.issubset(iteratedsentence.cells):
-                    if len(sentence.cells - iteratedsentence.cells) != 0:
-                        self.knowledge.append(Sentence(sentence.cells - iteratedsentence.cells, sentence.count - iteratedsentence.count))
+        # Iterate through each sentence in a knowledge, check other sentences in knowledge if its a subset
+        knowledge_copy = copy.deepcopy(self.knowledge)  # will break if self.knowledge is modified during iteration
+        for sentence in knowledge_copy:
+            for sub_sentence in knowledge_copy:
+                # Dont compare the same sentence in knowledge and check if other sentences are subsets of each other
+                if sub_sentence.cells.issubset(sentence.cells) and sentence.cells != sub_sentence.cells:
+                    # Check if subset is an empty set  (it will pass the above two conditions)
+                    if len(sub_sentence.cells) != 0:  # Empty sets have length of 0
+                        self.knowledge.append(
+                            Sentence(sentence.cells - sub_sentence.cells, sentence.count - sub_sentence.count)
+                        )
+
+        # Clean up self.knowledge for any empty sets
+        knowledge_cleanup = []
+        for sentence in self.knowledge:
+            if len(sentence.cells) != 0 and sentence not in knowledge_cleanup:  # Empty sets have length of 0
+                knowledge_cleanup.append(sentence)
+        self.knowledge = knowledge_cleanup
 
     def make_safe_move(self):
         """
@@ -257,7 +282,7 @@ class MinesweeperAI():
         iterate through all self.safes known, if it is not in moves_made, return that cell?
 
         """
-
+        print(self.safes - self.moves_made)
         for safecell in self.safes:
             if safecell not in self.moves_made:
                 return safecell
